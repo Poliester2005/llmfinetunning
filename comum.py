@@ -34,7 +34,8 @@ def require_gpu():
 
 
 def compute_dtype():
-    return torch.bfloat16 if torch.cuda.is_bf16_supported() else torch.float16
+    major, _ = torch.cuda.get_device_capability()
+    return torch.bfloat16 if major >= 8 else torch.float16  # RTX 20xx (Turing) -> fp16
 
 
 def load_tokenizer(model_name):

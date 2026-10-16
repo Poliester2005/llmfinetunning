@@ -1,0 +1,5 @@
+experimento,modelo,lr,lora_r,epocas,batch_efetivo,qlora,train_loss,eval_loss,val_acc,val_f1_macro,tempo_min,pico_vram_gb,gpu
+Qwen2.5-0.5B-Instruct_lr0.0002_r16_ep2_bs16,Qwen/Qwen2.5-0.5B-Instruct,0.0002,16,2,16,False,0.1844,0.1827,0.6451,0.6499,4.41,2.35,NVIDIA GeForce RTX 2060 SUPER
+Qwen2.5-0.5B-Instruct_lr5e-05_r16_ep2_bs16,Qwen/Qwen2.5-0.5B-Instruct,5e-05,16,2,16,False,0.1882,0.1965,0.6142,0.6169,8.11,2.35,NVIDIA GeForce RTX 2060 SUPER
+Qwen2.5-0.5B-Instruct_lr0.0002_r8_ep3.0_bs16,Qwen/Qwen2.5-0.5B-Instruct,0.0002,8,3.0,16,False,0.1525,0.2241,0.642,0.6439,4.75,2.28,NVIDIA GeForce RTX 2060 SUPER
+Qwen2.5-0.5B-Instruct_lr0.0002_r32_ep2_bs16,Qwen/Qwen2.5-0.5B-Instruct,0.0002,32,2,16,False,0.1818,0.183,0.6574,0.6613,3.12,2.49,NVIDIA GeForce RTX 2060 SUPER

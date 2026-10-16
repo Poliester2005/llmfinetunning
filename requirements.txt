@@ -1,0 +1,9 @@
+# Instale o PyTorch com CUDA ANTES (veja README), depois: pip install -r requirements.txt
+transformers>=4.56
+datasets>=3.0
+peft>=0.14
+trl>=0.21
+bitsandbytes>=0.45
+accelerate>=1.0
+scikit-learn
+gradio>=4.40

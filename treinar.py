@@ -2,6 +2,7 @@
 import argparse
 import csv
 import json
+import math
 import os
 import time
 
@@ -64,6 +65,8 @@ def main():
         task_type="CAUSAL_LM",
     )
     bf16 = compute_dtype() == torch.bfloat16
+    steps_por_epoca = math.ceil(len(data["train"]) / eff_bs)
+    warmup_steps = max(1, int(0.05 * math.ceil(steps_por_epoca * a.epochs)))  # ~5% do treino
     cfg = SFTConfig(
         output_dir=out_dir,
         num_train_epochs=a.epochs,
@@ -73,7 +76,7 @@ def main():
         gradient_accumulation_steps=a.grad_accum,
         max_length=a.max_length,
         lr_scheduler_type="cosine",
-        warmup_ratio=0.05,
+        warmup_steps=warmup_steps,
         logging_steps=10,
         eval_strategy="epoch",
         save_strategy="no",

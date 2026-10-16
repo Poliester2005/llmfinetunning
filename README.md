@@ -14,6 +14,16 @@
 
 ---
 
+## 👥 Integrantes
+
+| Nome | RM |
+|---|---|
+| Debora da Silva Amaral | 550412 |
+| Eduardo Pielich | 99767 |
+| Livia Namba Seraphim | 97819 |
+
+---
+
 ## 📑 Sumário
 
 1. [Visão geral](#-visão-geral)
@@ -145,8 +155,8 @@ projeto-llm/
 
 ```bash
 # 1. Clone o repositório
-git clone https://github.com/Poliester2005/<nome-do-repositorio>.git
-cd <nome-do-repositorio>
+git clone https://github.com/Poliester2005/llmfinetunning.git
+cd llmfinetunning
 
 # 2. Crie e ative um ambiente virtual
 python -m venv .venv
@@ -275,19 +285,37 @@ Plano de experimentos (variando um fator por vez a partir da configuração padr
 
 ### 📋 Resultados dos experimentos (validação)
 
-> Preencher com os valores de `results/experimentos.csv` depois de rodar.
+Dados registrados automaticamente pelo `treinar.py` em `results/experimentos.csv`:
+
+![Dados do experimento](docs/img/dadosexperimento.png)
+
+Resumo em tabela:
 
 | Experimento | LR | Rank | Épocas | Batch ef. | Train loss | Eval loss | Acurácia | F1 macro | Tempo (min) | VRAM (GB) |
 |---|---|---|---|---|---|---|---|---|---|---|
-| Baseline (sem treino) | - | - | - | - | - | - | _ | _ | - | _ |
-| Padrão | 2e-4 | 16 | 2 | 16 | _ | _ | _ | _ | _ | _ |
-| LR menor | 5e-5 | 16 | 2 | 16 | _ | _ | _ | _ | _ | _ |
-| Rank 8, 3 épocas | 2e-4 | 8 | 3 | 16 | _ | _ | _ | _ | _ | _ |
-| Rank 32 | 2e-4 | 32 | 2 | 16 | _ | _ | _ | _ | _ | _ |
+| Padrão | 2e-4 | 16 | 2 | 16 | 0,1844 | 0,1827 | 0,6451 | 0,6499 | 4,41 | 2,35 |
+| LR menor | 5e-5 | 16 | 2 | 16 | 0,1882 | 0,1965 | 0,6142 | 0,6169 | 8,11 | 2,35 |
+| Rank 8, 3 épocas | 2e-4 | 8 | 3 | 16 | 0,1525 | 0,2241 | 0,6420 | 0,6439 | 4,75 | 2,28 |
+| **Rank 32** | 2e-4 | 32 | 2 | 16 | 0,1818 | 0,1830 | **0,6574** | **0,6613** | 3,12 | 2,49 |
 
 ### 💡 Análise dos parâmetros
 
-> Escrever aqui as conclusões: qual configuração foi melhor, se mais épocas causaram *overfitting* (eval loss subindo enquanto train loss cai), se aumentar o rank compensou o custo de memória e tempo, etc.
+> O baseline (modelo sem treino) foi medido apenas no conjunto de **teste**; ver a seção de avaliação.
+
+**Configuração padrão** (LR 2e-4, rank 16, 2 épocas, batch efetivo 16):
+
+- Alcançou **64,51% de acurácia** e **F1 macro de 64,99%** na validação.
+- *Train loss* (0,1844) e *eval loss* (0,1827) ficaram muito próximas, o que não indica *overfitting* após 2 épocas. A *train loss* é a média do treino inteiro, então a comparação é aproximada.
+- O treino levou **4,41 minutos** e usou no máximo **2,35 GB de VRAM** na RTX 2060 SUPER (8 GB), o que deixa bastante margem para testar rank maior ou o modelo de 1,5B.
+
+**Comparação entre os experimentos (validação, 324 exemplos):**
+
+- **Melhor configuração: rank 32** (LR 2e-4, 2 épocas), com 65,74% de acurácia e F1 de 66,13%, seguida da configuração padrão (rank 16), com 64,51%.
+- **LR menor (5e-5) foi a pior**: 61,42% de acurácia e a maior *eval loss* entre as configurações de 2 épocas (0,1965). Com poucas épocas, uma taxa de aprendizado baixa não deu ao modelo tempo suficiente para aprender (*underfitting*).
+- **Rank 8 com 3 épocas mostra sinal de *overfitting***: a *train loss* caiu para 0,1525, mas a *eval loss* subiu para 0,2241 (a maior de todas), e a acurácia (64,20%) não superou a da configuração padrão. Mais épocas não compensaram.
+- **Rank 16 → 32** trouxe um ganho pequeno (+1,2 ponto de acurácia) com *eval loss* praticamente igual (0,1827 vs 0,1830), e custou apenas ~0,14 GB de VRAM a mais (2,35 → 2,49 GB). Essa diferença está dentro da margem de erro (cerca de ±5 pontos com 324 exemplos e uma única semente), portanto o rank teve efeito pequeno e não conclusivo.
+- **Tempo de treino:** o experimento de LR menor levou 8,11 min contra 3 a 5 min nos demais, apesar de ter o mesmo custo computacional da configuração padrão. A diferença provavelmente vem da carga da máquina durante a execução (outros programas usando a GPU), e não do parâmetro.
+- **Memória:** o pico de VRAM ficou entre 2,28 e 2,49 GB em todos os casos, bem abaixo dos 8 GB da placa.
 
 ---
 
@@ -303,24 +331,75 @@ Plano de experimentos (variando um fator por vez a partir da configuração padr
 
 ### 🏁 Resultado final no conjunto de teste
 
-> Preencher após rodar `python avaliar.py` e `python avaliar.py --adapter outputs/<melhor>`.
+**Modelo base** (`python avaliar.py`):
+
+![Avaliação do modelo base](docs/img/avaliarf1.png)
+
+**Modelo fine-tuned** (`python avaliar.py --adapter outputs/<melhor>`):
+
+![Avaliação do modelo fine-tuned](docs/img/avaliarfinetunned.png)
+
+Resumo:
 
 | Modelo | Acurácia | F1 macro | Respostas inválidas |
 |---|---:|---:|---:|
-| Base (sem fine-tuning) | _ | _ | _ |
-| Fine-tuned (LoRA) | _ | _ | _ |
+| Base (sem fine-tuning) | 0,5678 | 0,5715 | 3 |
+| Fine-tuned (LoRA, configuração padrão) | 0,7000 | 0,7035 | 0 |
+
+**F1 por classe (teste, 870 exemplos, 290 por classe):**
+
+| Classe | F1 base | F1 fine-tuned | Variação |
+|---|---:|---:|---:|
+| negativo | 0,61 | 0,70 | +0,09 |
+| neutro | 0,49 | 0,65 | +0,16 |
+| positivo | 0,61 | 0,76 | +0,15 |
+
+**Matriz de confusão (linhas = rótulo real, colunas = previsão):**
+
+Modelo base:
+
+| Real \ Previsto | negativo | neutro | positivo | inválido |
+|---|---:|---:|---:|---:|
+| negativo | 189 | 78 | 21 | 2 |
+| neutro | 100 | 152 | 38 | 0 |
+| positivo | 36 | 100 | 153 | 1 |
+
+Fine-tuned (configuração padrão):
+
+| Real \ Previsto | negativo | neutro | positivo |
+|---|---:|---:|---:|
+| negativo | 198 | 75 | 17 |
+| neutro | 58 | 210 | 22 |
+| positivo | 19 | 70 | 201 |
+
+O modelo base deu **3 respostas fora do formato** (`Negação`); o fine-tuned, **nenhuma**.
 
 ### 🔍 Exemplos de respostas
 
-> Inserir 5 a 10 exemplos lado a lado (texto, esperado, base, fine-tuned), incluindo erros.
+Exemplos do conjunto de teste (fonte: `results/predicoes_*_test.csv`):
 
 | Texto | Esperado | Base | Fine-tuned |
 |---|---|---|---|
-| _ | _ | _ | _ |
+| Camila Queirós sempre lindaaaa #VideoShowAoVivo | positivo | neutro ❌ | positivo ✅ |
+| #MasterChefBR Já estou aqui ansiosa pra assistir. 😬😬😬😬😬 | positivo | neutro ❌ | positivo ✅ |
+| Genteee a Ana Furtado é zero carisma #EDeCasa | negativo | neutro ❌ | negativo ✅ |
+| Pega a da lata e faz macarrão com sardinha rapidinho #MasterChefBR | neutro | positivo ❌ | neutro ✅ |
+| Eu to tremendo #MasterChefBR | negativo | negativo ✅ | positivo ❌ |
+| Falta pouco #MasterChefBR 👀💖😋 | positivo | positivo ✅ | negativo ❌ |
+| @user @user Suenia vem aqui me abraçar #VideoShowAoVivo | neutro | neutro ✅ | positivo ❌ |
+| A Sophia só é bonita, pois não tem talento algum #VideoShowAoVivo | negativo | neutro ❌ | neutro ❌ |
+| Clipe inédito de CDA no #DomingoLegal Será que é Aquarela?🤔😍 | positivo | neutro ❌ | neutro ❌ |
+| Cadê o Theo? #MaisVocê | neutro | negativo ❌ | negativo ❌ |
 
 ### 🧾 Análise
 
-> O que melhorou? Em qual classe o modelo mais erra (normalmente `neutro`)? Há padrões nos erros, como ironia, gírias ou hashtags?
+- O fine-tuning elevou a **acurácia de 56,78% para 70,00%** e o **F1 macro de 57,15% para 70,35%** (cerca de **+13 pontos percentuais** em ambas), com apenas 4,4 minutos de treino.
+- Todas as classes melhoraram. Os maiores ganhos foram em `neutro` (+0,16) e `positivo` (+0,15).
+- **`neutro` continua sendo a classe mais difícil** (F1 0,65). Seu recall é alto (0,72), mas a precisão é menor (0,59): o modelo previu `neutro` 355 vezes, embora existam só 290 exemplos dessa classe, algo comum quando o limite entre neutro e as outras classes é subjetivo.
+- Em `positivo`, a precisão é alta (0,84) e o recall é menor (0,69): quando o modelo diz que é positivo, costuma acertar, mas deixa passar parte dos textos positivos: **70 dos 89 positivos errados foram classificados como neutros** (a matriz de confusão acima). O mesmo vale para `negativo`, em que 75 dos 92 erros foram para `neutro`.
+- **Padrão dos erros** (observando os exemplos): os erros se concentram em textos curtos, sem uma palavra clara de sentimento, com emojis e hashtags, ou com polaridade mista (elogio e crítica no mesmo texto). Nesses casos o modelo tende a escolher o rótulo intermediário (`neutro`). É uma observação qualitativa, e não uma medição.
+- A acurácia na validação (64,5%) ficou abaixo da do teste (70,0%). São conjuntos diferentes e pequenos: com 324 exemplos a margem de erro é de cerca de ±5 pontos, então a diferença não indica problema. O ganho de ~13 pontos sobre o baseline é maior que essas margens.
+- **Ressalva:** os resultados vêm de uma única execução (uma semente); para conclusões mais firmes seria preciso repetir com sementes diferentes.
 
 ---
 
@@ -345,7 +424,7 @@ Depois abra o endereço exibido no terminal (normalmente `http://127.0.0.1:7860`
 
 O nome da GPU em uso aparece no topo da página.
 
-> 📸 _Inserir aqui um print do frontend em `docs/img/frontend.png`_
+![Frontend em funcionamento](docs/img/frontend.png)
 
 ---
 
@@ -358,11 +437,11 @@ nvidia-smi
 python -c "import torch; print(torch.cuda.is_available(), torch.cuda.get_device_name(0))"
 ```
 
-> Inserir aqui: `![GPU no VSCode](docs/img/gpu-vscode.png)`
+![GPU funcionando no VSCode](docs/img/gpufuncionando.png)
 
-Também vale registrar um `nvidia-smi` **durante o treino**, mostrando uso de GPU e memória:
+`nvidia-smi` **durante o treino**: GPU a 78% de utilização e 5.591 MiB dos 8.192 MiB em uso; o processo `python3.13.exe` aparece como processo de computação (tipo `C`). O total de memória que o `nvidia-smi` mostra inclui os demais programas abertos no Windows, por isso é maior que o pico de 2,35 GB reportado pelo PyTorch.
 
-> Inserir aqui: `![GPU durante o treino](docs/img/gpu-treino.png)`
+![GPU em uso durante o treino](docs/img/usodurantetreino.png)
 
 ---
 
@@ -409,6 +488,6 @@ Também vale registrar um `nvidia-smi` **durante o treino**, mostrando uso de GP
 
 <div align="center">
 
-Desenvolvido por **Eduardo Pielich Sanchez** · [GitHub](https://github.com/Poliester2005)
+Desenvolvido por **Debora da Silva Amaral**, **Eduardo Pielich** e **Livia Namba Seraphim** · [Repositório](https://github.com/Poliester2005/llmfinetunning)
 
 </div>
